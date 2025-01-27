@@ -90,4 +90,13 @@ plot_ly(
   showlegend = TRUE
 )
 
+plot_ly(
+  data = data,
+  y = ~`micromol*g soil*hour`,
+  x = ~`Soil Type`,
+  type = "scatter",
+  color = ~Site,
+  showlegend = TRUE
+)
+
 

@@ -50,7 +50,7 @@ print(result_AEG3)
 
 
 # AEG 4
-AEG4 <- c(11.71, 20.67, 17.68, 9.96, 9.46, 19.67)
+AEG4 <- c(11.71, 17.68, 9.96, 9.46, 19.67)
 
 
 # Test for normality
