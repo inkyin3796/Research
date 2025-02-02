@@ -22,7 +22,11 @@ glimpse(data)
 
 ggplot(data, aes(x = Site,
                  y = Phenoloxidase_Activity,
-                 fill = Site)) + geom_boxplot()
+                 fill = Site)) + geom_boxplot()+ 
+  labs(x = "Site", y = "Phenoloxidase Activity (µmol/gsoil/h)") +
+  theme_classic(base_family = "serif")
+
+
 plot_ly(
   data = data,
   y = ~Phenoloxidase_Activity,
@@ -130,9 +134,9 @@ plot_ly(
 plot_ly(
   data = data,
   y = ~Phenoloxidase_Activity,
-  x = ~`Soil Type`,
+  x = ~ Soil_Type,
   type = "box",
-  color = ~`Soil Type`,
+  color = ~Soil_Type,
   showlegend = FALSE
 )
 
@@ -157,8 +161,8 @@ ggplot(data, aes(x = pH, y = Phenoloxidase_Activity)) + geom_point(size = 1) +
   geom_smooth(method = "lm", se=FALSE, color ="grey", 
               formula = y~x ) +
   stat_cor(label.x = 5, label.y = 40, size =4)+ 
-  stat_regline_equation(label.x = 5, label.y = 38, size = 4) + 
-  labs(x = "pH", y = "Phenoloxidase Activity") +
+  stat_regline_equation(label.x = 5, label.y = 36, size = 4) + 
+  labs(x = "pH", y = "Phenoloxidase Activity (µmol/gsoil/h)") +
   theme_classic(base_family = "serif")
 
 x <- data$pH 
@@ -583,6 +587,7 @@ plot + annotate("text", x = 3, y = 40,
                                "\nP = ", signif(p_value, 3)),
                 hjust = 1, size = 4, color = "black")
 
+
 my_data <- data %>%
   select(Soil_Type, Phenoloxidase_Activity) %>%
   drop_na()
@@ -603,6 +608,7 @@ library(patchwork)
 install.packages("gapminder")
 library(gapminder)
 library(forcats)
+
 anova_result <- aov (Phenoloxidase_Activity ~ Soil_Type , data = data)
 summary(anova_result)
 tukey_result <- TukeyHSD(anova_result)
@@ -652,20 +658,68 @@ write.csv(tukey_df1, "TukeyHSD_Results1.csv")
 # Save the boxplot
 ggsave("Phenoloxidaseandsite_Boxplot.png")
 
-# T test
 
-# Subset data for two soil types, e.g., Soil1 and Soil2
-data_subset <- subset(data, Soil_Type %in% c("Soil1", "Soil2"))
 
-# Perform an independent two-sample t-test
-t_test_result <- t.test(PhenoloxidaseActivity ~ SoilType, data = data_subset, var.equal = TRUE)
 
-# View the results
-print(t_test_result)
+# Perform ANOVA
+anova_result <- aov (Phenoloxidase_Activity ~ Site , data = data)
 
-pairwise_t_test_result <- pairwise.t.test(data$PhenoloxidaseActivity, data$SoilType, p.adjust.method = "bonferroni")
+# Perform Tukey's HSD for pairwise comparisons
+tukey_result <- TukeyHSD(anova_result)
 
-# View the pairwise t-test results
-print(pairwise_t_test_result)
+# Print Tukey's HSD results
+print(tukey_result)
+
+# Install and load the multcompView package
+install.packages("multcompView")
+library(multcompView)
+
+# Extract p-values from Tukey's HSD results
+tukey_pvalues <- tukey_result$Site[, "p adj"]
+
+# Create a matrix of p-values
+tukey_matrix <- as.dist(tapply(tukey_pvalues, names(tukey_pvalues), identity))
+
+# Generate group letters using multcompView
+letters <- multcompLetters(tukey_matrix)
+
+# View the group letters
+print(letters$Letters)
+
+
+library(ggplot2)
+library(dplyr)
+
+# Calculate means and standard errors for each site
+summary_data <- data %>%
+  group_by(Site) %>%
+  summarise(
+    mean_activity = mean(Phenoloxidase_Activity),
+    se_activity = sd(Phenoloxidase_Activity) / sqrt(n())
+  )
+
+# Add the letters to the summary data
+summary_data$letters <- letters$Letters[summary_data$Site]
+
+# Create the bar plot
+plot <- ggplot(summary_data, aes(x = Site, y = mean_activity, fill = Site)) +
+  geom_bar(stat = "identity", color = "black", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_activity - se_activity, ymax = mean_activity + se_activity),
+                width = 0.2) +
+  geom_text(aes(label = letters, y = mean_activity + se_activity + 0.2), size = 2) +
+  labs(
+    title = "Phenoloxidase Activity by Site",
+    x = "Site",
+    y = "Mean Phenoloxidase Activity (micromol/gsoil/hour)"
+  ) +
+  theme_minimal()
+
+print(plot)
+
+
+
+
+
+
 
 
